@@ -220,3 +220,61 @@ d) **Post-exploitation**
 
 
 e) **Reporting Vulnerabilities**
+
+Network Topology: What are the addresses and relationships of the machines involved?
+
+
+Solution: The following machines live on the network:
+
+
+Kali: 192.168.1.90
+
+
+ELK: 192.168.1.100
+
+
+Target: 192.168.1.105
+
+
+
+
+
+
+Red Team: What were the three most critical vulnerabilities you discovered? Choose the three vulnerabilities that you consider to be most critical.
+
+
+Solution:  While the web server suffers from several vulnerabilities, the three below are the most critical:
+
+
+Sensitive Data Exposure: Exposure of the secret_folder directory and the connect_to_corp_server file compromised the credentials of the Web DAV folder. Sensitive Data Exposure (SDE) is an OWASP Top 10 vulnerability.
+
+Unauthorized File Upload: The web server allows users to upload arbitrary files — specifically, PHP scripts. This exposes the machine to the wide array of attacks enabled by malicious files.
+
+Remote Code Execution: As a consequence of the unauthorized file upload vulnerability, attackers can upload web shells and achieve arbitrary remote code execution on the web server.
+Additional severe vulnerabilities include:
+
+Lack of mitigation against brute force attacks
+No authentication for sensitive data, e.g., secret_folder
+
+Plaintext protocols (HTTP and WebDAV)
+
+
+
+
+
+
+
+Blue Team: What evidence did you find in the logs of the attack? What data should you be monitoring to detect these attacks in the future?
+
+
+Solution: A considerable amount of data is available in the logs. Specifically, evidence of the following was obtained upon inspection:
+
+Traffic from attack VM to target, including unusually high volume of requests
+Access to sensitive data in the secret_folder directory
+Brute-force attack against the HTTP server
+POST request corresponding to upload of shell.php
+
+
+
+
+Unusual Request Volume: Logs indicate an unusual number of requests and failed responses between the Kali VM and the target. Note that 401, 301, 207, 404 and 200 are the top responses.
